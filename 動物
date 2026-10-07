@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>野生動物百科 - Wild Encyclopedia</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        emerald: {
+                            850: '#064e3b',
+                            950: '#022c22',
+                        },
+                        earth: {
+                            50: '#fdfbf7',
+                            100: '#f7f3e9',
+                            800: '#3d312a',
+                            900: '#28201b',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Microsoft JhengHei', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Custom smooth scroll bar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        .dark ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #059669;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #047857;
+        }
+    </style>
+</head>
+<body class="bg-earth-50 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100 min-h-screen transition-colors duration-300 font-sans flex flex-col">
+
+    <!-- Navigation Header -->
+    <header class="sticky top-0 z-30 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="resetFilters()">
+                <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-xl shadow-lg shadow-emerald-600/30">
+                    <i class="fa-solid fa-paw"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">野生動物百科</h1>
+                    <p class="text-xs text-zinc-500 dark:text-zinc-400">Wild Encyclopedia</p>
+                </div>
+            </div>
+
+            <!-- Quick Controls -->
+            <div class="flex items-center gap-2 sm:gap-4">
+                <button id="favoriteToggleBtn" onclick="toggleFavoritesFilter()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-sm font-medium transition-all">
+                    <i class="fa-solid fa-heart text-red-500"></i>
+                    <span class="hidden sm:inline">收藏列表</span>
+                    <span id="favCountBadge" class="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+                </button>
+                <button id="themeToggleBtn" onclick="toggleDarkMode()" class="p-2 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-all" title="切換深淺色模式">
+                    <i class="fa-solid fa-moon dark:hidden"></i>
+                    <i class="fa-solid fa-sun hidden dark:block text-amber-400"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Banner -->
+    <section class="relative bg-gradient-to-b from-emerald-900 to-emerald-800 text-white py-12 px-4 sm:px-6 lg:px-8 shadow-inner overflow-hidden">
+        <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
+        <div class="max-w-4xl mx-auto text-center relative z-10">
+            <h2 class="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-4 tracking-wide">探索大自然的奇妙生物</h2>
+            <p class="text-emerald-100 text-base sm:text-lg mb-8 max-w-2xl mx-auto leading-relaxed">
+                深入了解地球上各種獨特野生動物的習性、生活棲息地與飲食習慣，開啟您的自然探索之旅。
+            </p>
+
+            <!-- Search Bar -->
+            <div class="relative max-w-xl mx-auto">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-zinc-400">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </div>
+                <input type="text" id="searchInput" oninput="handleSearch()" placeholder="搜尋動物名稱、關鍵字或地點 (如：雨林、肉食)..." 
+                    class="w-full pl-11 pr-10 py-3.5 rounded-2xl bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 shadow-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 border-none transition-all text-sm sm:text-base">
+                <button id="clearSearchBtn" onclick="clearSearch()" class="hidden absolute inset-y-0 right-0 pr-3.5 flex items-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
+        <!-- Category Filter Tabs -->
+        <div class="flex items-center justify-start sm:justify-center gap-2 overflow-x-auto pb-4 mb-8 no-scrollbar" id="categoryTabs">
+            <button onclick="setCategory('all')" data-category="all" class="category-btn active px-4 py-2 rounded-xl font-medium text-sm whitespace-nowrap transition-all bg-emerald-600 text-white shadow-md shadow-emerald-600/20">
+                <i class="fa-solid fa-border-all mr-1.5"></i>全部動物
+            </button>
+            <button onclick="setCategory('mammal')" data-category="mammal" class="category-btn px-4 py-2 rounded-xl font-medium text-sm whitespace-nowrap transition-all bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700">
+                <i class="fa-solid fa-hippo mr-1.5"></i>哺乳類
+            </button>
+            <button onclick="setCategory('bird')" data-category="bird" class="category-btn px-4 py-2 rounded-xl font-medium text-sm whitespace-nowrap transition-all bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700">
+                <i class="fa-solid fa-crow mr-1.5"></i>鳥類
+            </button>
+            <button onclick="setCategory('reptile')" data-category="reptile" class="category-btn px-4 py-2 rounded-xl font-medium text-sm whitespace-nowrap transition-all bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700">
+                <i class="fa-solid fa-frog mr-1.5"></i>兩棲爬蟲類
+            </button>
+            <button onclick="setCategory('marine')" data-category="marine" class="category-btn px-4 py-2 rounded-xl font-medium text-sm whitespace-nowrap transition-all bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700">
+                <i class="fa-solid fa-fish mr-1.5"></i>海洋生物
+            </button>
+        </div>
+
+        <!-- Filter info status banner -->
+        <div id="filterInfoBanner" class="hidden mb-6 flex items-center justify-between bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/50 px-4 py-2.5 rounded-xl text-emerald-800 dark:text-emerald-300 text-sm">
+            <span id="filterInfoText">目前正在顯示篩選結果</span>
+            <button onclick="resetFilters()" class="font-bold underline hover:text-emerald-600 dark:hover:text-emerald-200">清除所有篩選</button>
+        </div>
+
+        <!-- Animals Grid -->
+        <div id="animalGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Cards populated dynamically via JavaScript -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden text-center py-16">
+            <div class="w-20 h-20 mx-auto mb-4 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center text-3xl text-zinc-400">
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </div>
+            <h3 class="text-xl font-bold mb-2">找不到匹配的動物</h3>
+            <p class="text-zinc-500 dark:text-zinc-400 mb-6 max-w-sm mx-auto">請嘗試搜尋其他關鍵字或切換動物分類。</p>
+            <button onclick="resetFilters()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl shadow-md transition-all">重設搜尋條件</button>
+        </div>
+    </main>
+
+    <!-- Animal Detail Modal -->
+    <div id="detailModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity duration-300">
+        <div class="bg-white dark:bg-zinc-800 rounded-3xl max-w-3xl w-full overflow-hidden shadow-2xl transform transition-all my-8 relative flex flex-col max-h-[90vh]">
+            
+            <!-- Modal Header / Image Area -->
+            <div class="relative h-64 sm:h-80 w-full bg-zinc-200 dark:bg-zinc-700 shrink-0">
+                <img id="modalImage" src="" alt="" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                
+                <!-- Close Button -->
+                <button onclick="closeModal()" class="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/40 text-white hover:bg-black/70 flex items-center justify-center backdrop-blur-md transition-all">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+
+                <!-- Audio Play Button on Banner -->
+                <button id="modalAudioBtn" onclick="playCurrentAnimalSound()" class="absolute top-4 left-4 px-3.5 py-2 rounded-full bg-emerald-600/90 hover:bg-emerald-600 text-white font-medium text-xs sm:text-sm flex items-center gap-2 backdrop-blur-md shadow-lg transition-all">
+                    <i class="fa-solid fa-volume-high"></i>
+                    <span id="modalAudioText">聆聽叫聲</span>
+                </button>
+
+                <!-- Animal Name Overlay -->
+                <div class="absolute bottom-4 left-6 right-6 text-white">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span id="modalCategoryTag" class="px-2.5 py-0.5 rounded-md text-xs font-semibold bg-emerald-500/90 backdrop-blur-md text-white"></span>
+                        <span id="modalStatusTag" class="px-2.5 py-0.5 rounded-md text-xs font-semibold"></span>
+                    </div>
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <h2 id="modalName" class="text-2xl sm:text-4xl font-extrabold tracking-tight"></h2>
+                            <p id="modalSciName" class="text-zinc-300 text-xs sm:text-sm italic"></p>
+                        </div>
+                        <button id="modalFavBtn" onclick="toggleModalFavorite()" class="text-2xl p-2 text-zinc-300 hover:text-red-500 transition-colors">
+                            <i class="fa-regular fa-heart"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Body Content -->
+            <div class="p-6 overflow-y-auto space-y-6 flex-grow">
+                
+                <!-- Quick Info Stats Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 bg-zinc-50 dark:bg-zinc-900/60 rounded-2xl border border-zinc-100 dark:border-zinc-700/50">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                            <i class="fa-solid fa-clock"></i>
+                        </div>
+                        <div>
+                            <span class="block text-xs text-zinc-400">活動時間</span>
+                            <span id="modalActiveTime" class="text-xs sm:text-sm font-semibold"></span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                            <i class="fa-solid fa-utensils"></i>
+                        </div>
+                        <div>
+                            <span class="block text-xs text-zinc-400">食性種類</span>
+                            <span id="modalDietType" class="text-xs sm:text-sm font-semibold"></span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 col-span-2 sm:col-span-1">
+                        <div class="w-9 h-9 rounded-xl bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                        <div>
+                            <span class="block text-xs text-zinc-400">社交習性</span>
+                            <span id="modalSocial" class="text-xs sm:text-sm font-semibold"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Tabs / Sections -->
+                <div class="space-y-5">
+                    <!-- Habits Section -->
+                    <div class="space-y-2">
+                        <h3 class="text-base font-bold flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+                            <i class="fa-solid fa-bolt"></i> 生活習性 (Habits & Behavior)
+                        </h3>
+                        <p id="modalHabits" class="text-zinc-600 dark:text-zinc-300 text-sm sm:text-base leading-relaxed bg-zinc-50 dark:bg-zinc-900/30 p-3.5 rounded-xl border border-zinc-100 dark:border-zinc-800"></p>
+                    </div>
+
+                    <!-- Habitat Section -->
+                    <div class="space-y-2">
+                        <h3 class="text-base font-bold flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+                            <i class="fa-solid fa-earth-americas"></i> 棲息地與分布 (Habitat & Distribution)
+                        </h3>
+                        <p id="modalHabitat" class="text-zinc-600 dark:text-zinc-300 text-sm sm:text-base leading-relaxed bg-zinc-50 dark:bg-zinc-900/30 p-3.5 rounded-xl border border-zinc-100 dark:border-zinc-800"></p>
+                    </div>
+
+                    <!-- Diet Section -->
+                    <div class="space-y-2">
+                        <h3 class="text-base font-bold flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+                            <i class="fa-solid fa-drumstick-bite"></i> 飲食習慣 (Diet & Feeding)
+                        </h3>
+                        <p id="modalDiet" class="text-zinc-600 dark:text-zinc-300 text-sm sm:text-base leading-relaxed bg-zinc-50 dark:bg-zinc-900/30 p-3.5 rounded-xl border border-zinc-100 dark:border-zinc-800"></p>
+                    </div>
+
+                    <!-- Fun Facts Section -->
+                    <div class="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 p-4 rounded-2xl">
+                        <h3 class="text-base font-bold text-amber-800 dark:text-amber-300 flex items-center gap-2 mb-2">
+                            <i class="fa-solid fa-lightbulb"></i> 趣味小知識 (Fun Facts)
+                        </h3>
+                        <ul id="modalFunFacts" class="list-disc list-inside space-y-1 text-sm text-amber-900 dark:text-amber-200"></ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Modal Footer -->
+            <div class="p-4 border-t border-zinc-100 dark:border-zinc-700/50 bg-zinc-50 dark:bg-zinc-900/50 flex justify-end">
+                <button onclick="closeModal()" class="px-5 py-2 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-800 dark:text-zinc-100 font-medium text-sm rounded-xl transition-all">關閉本頁</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-12 bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 py-6 text-center text-xs text-zinc-500 dark:text-zinc-400">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-leaf text-emerald-600"></i>
+                <span class="font-medium text-zinc-700 dark:text-zinc-300">野生動物百科 Wild Encyclopedia</span>
+            </div>
+            <p>推廣自然保育知識 ‧ 愛護地球生態環境</p>
+        </div>
+    </footer>
+
+    <script>
+        // Animals Complete Dataset
+        const animalsData = [
+            {
+                id: 'lion',
+                name: '非洲獅',
+                englishName: 'African Lion',
+                sciName: 'Panthera leo',
+                category: 'mammal',
+                categoryName: '哺乳類',
+                status: '易危 (VU)',
+                statusColor: 'bg-amber-500 text-white',
+                image: 'https://images.unsplash.com/photo-1546182990-dffeafbe841d?auto=format&fit=crop&w=800&q=80',
+                summary: '被譽為「百獸之王」，是極少數形成複雜社會群居體系的貓科動物。',
+                activeTime: '晝夜均有 (偏夜行)',
+                dietType: '肉食性',
+                social: '群居 (獅群)',
+                habits: '獅子是唯一的群居貓科動物，獅群通常由數隻雌獅、牠們的後代以及少數幾隻雄獅組成。雄獅主要負責保衛領地，而雌獅則組隊進行協同捕獵。牠們一天可休息長達 18 至 20 小時以節省體力。',
+                habitat: '主要棲息於非洲撒哈拉以南的撒哈拉稀樹草原、開闊草原及疏林叢林中。',
+                diet: '主要捕食大型有蹄類動物，如角馬、斑馬、水牛及羚羊。牠們採用隱蔽接近、爆發衝刺與團隊圍堵的方式進行獵殺。',
+                funFacts: [
+                    '雄獅的吼叫聲極其宏亮，最遠可以在 8 公里外聽到！',
+                    '獅群中超過 80% 的獵食活動是由母獅合作完成的。'
+                ],
+                soundPitch: 150 // Synthesizer pitch frequency representation
+            },
+            {
+                id: 'panda',
+                name: '大熊貓',
+                englishName: 'Giant Panda',
+                sciName: 'Ailuropoda melanoleuca',
+                category: 'mammal',
+                categoryName: '哺乳類',
+                status: '易危 (VU)',
+                statusColor: 'bg-amber-500 text-white',
+                image: 'https://images.unsplash.com/photo-1564349683136-77e08dba1ef9?auto=format&fit=crop&w=800&q=80',
+                summary: '中國特有的國寶生物，以標誌性的黑白毛色與專一的竹子飲食聞名。',
+                activeTime: '晝夜交替',
+                dietType: '草食性 (演化上屬肉食目)',
+                social: '獨居',
+                habits: '大熊貓性情溫和且極為獨居，除了繁殖季節外很少互動。由於竹子營養價值較低，牠們每天需要花費 10 到 16 個小時進食，其餘時間大部分在休息或睡覺。',
+                habitat: '棲息於中國四川、陝西和甘肅的高山竹林中，氣候涼爽潮濕。',
+                diet: '飲食 99% 以上由竹子組成（包括竹筍、竹葉和竹莖）。偶然也會食用其他植物或小昆蟲。',
+                funFacts: [
+                    '大熊貓的前掌演化出了一種特殊的「偽拇指」（實際上是腕骨延伸），專門用來握住竹竿。',
+                    '剛出生的大熊貓寶寶只有媽媽體重的 1/900，呈現粉紅色且幾乎無毛！'
+                ],
+                soundPitch: 400
+            },
+            {
+                id: 'penguin',
+                name: '帝企鵝',
+                englishName: 'Emperor Penguin',
+                sciName: 'Aptenodytes forsteri',
+                category: 'bird',
+                categoryName: '鳥類',
+                status: '近危 (NT)',
+                statusColor: 'bg-yellow-500 text-white',
+                image: 'https://images.unsplash.com/photo-1598439210625-5067c578f3f6?auto=format&fit=crop&w=800&q=80',
+                summary: '現存體型最大的企鵝種類，能在南極極度嚴寒的冰雪環境中繁衍後代。',
+                activeTime: '晝行性',
+                dietType: '肉食性',
+                social: '高度群居',
+                habits: '帝企鵝具備驚人的禦寒能力，在零下 40°C 的極地風雪中，牠們會緊密擠成龐大的「取暖陣型」並不斷輪流更換位置。雄企鵝會在嚴冬中孵蛋長達兩個月而不進食。',
+                habitat: '僅生活於南極洲及其周邊的冰原與極地海域。',
+                diet: '主要以小魚、甲殼類（如南極磷蝦）以及烏賊為食。牠們是優秀的潛水員，可潛入 500 公尺深的海底。',
+                funFacts: [
+                    '帝企鵝可以在水下屏息超過 20 分鐘！',
+                    '雄企鵝在孵蛋期間靠體內脂肪生活，體重會減輕近一半。'
+                ],
+                soundPitch: 600
+            },
+            {
+                id: 'blue_whale',
+                name: '藍鯨',
+                englishName: 'Blue Whale',
+                sciName: 'Balaenoptera musculus',
+                category: 'marine',
+                categoryName: '海洋生物',
+                status: '瀕危 (EN)',
+                statusColor: 'bg-orange-600 text-white',
+                image: 'https://images.unsplash.com/photo-1568430462629-2235726c1e18?auto=format&fit=crop&w=800&q=80',
+                summary: '地球歷史上已知體型最大的動物，心臟大小相當於一輛小型汽車。',
+                activeTime: '晝夜均有',
+                dietType: '肉食性 (濾食性)',
+                social: '單獨或小群',
+                habits: '藍鯨優雅地在大洋中巡航，透過發出極低頻率的鳴叫聲與數百公里外的夥伴交流。牠們在夏季於極地富饒的水域覓食，冬季則遷徙至熱帶海域繁殖。',
+                habitat: '廣泛分佈於全球各大洋深海區。',
+                diet: '專一以極小的磷蝦為食。在繁盛季節，一條成年藍鯨每天可吞食高達 4 噸的磷蝦。',
+                funFacts: [
+                    '藍鯨發出的聲音高達 188 分貝，比噴射機起飛還要響亮，是地球上聲音最大的動物。',
+                    '牠們的舌頭重量就相當於一頭成年大象！'
+                ],
+                soundPitch: 80
+            },
+            {
+                id: 'chameleon',
+                name: '高冠變色龍',
+                englishName: 'Veiled Chameleon',
+                sciName: 'Chamaeleo calyptratus',
+                category: 'reptile',
+                categoryName: '兩棲爬蟲類',
+                status: '無危 (LC)',
+                statusColor: 'bg-emerald-600 text-white',
+                image: 'https://images.unsplash.com/photo-1504450758481-7338eba7524a?auto=format&fit=crop&w=800&q=80',
+                summary: '獨特的樹棲爬蟲類，以可獨立旋轉的眼睛與極速彈射的長舌頭著稱。',
+                activeTime: '晝行性',
+                dietType: '雜食性',
+                social: '獨居',
+                habits: '變色龍皮膚內的色素細胞能根據情緒、溫度與光線改變體色。牠們雙眼可 360 度獨立旋轉，能同時觀察兩個不同方向的環境。',
+                habitat: '原產於葉門與沙烏地阿拉伯的高原與山谷樹林中。',
+                diet: '主要捕食各類昆蟲（如蟋蟀、蝗蟲），大成體偶爾也會食用植物嫩葉與花朵。',
+                funFacts: [
+                    '變色龍彈射舌頭的速度極快，只需 1/16 秒就能射出比自己體長還長的舌頭擊中獵物！',
+                    '變色龍改變顏色主要是為了溝通和調節體溫，而不僅僅是為了偽裝。'
+                ],
+                soundPitch: 750
+            },
+            {
+                id: 'sea_otter',
+                name: '海獺',
+                englishName: 'Sea Otter',
+                sciName: 'Enhydra lutris',
+                category: 'marine',
+                categoryName: '海洋生物',
+                status: '瀕危 (EN)',
+                statusColor: 'bg-orange-600 text-white',
+                image: 'https://images.unsplash.com/photo-1615859131861-052f0641a60e?auto=format&fit=crop&w=800&q=80',
+                summary: '海洋中最可愛的哺乳動物之一，懂得使用石頭作為工具打開堅硬的海鮮殻。',
+                activeTime: '晝行性',
+                dietType: '肉食性',
+                social: '群居 (海獺群)',
+                habits: '海獺大部分時間都在海面上仰臥浮游。為了避免在睡覺時被海流沖走，牠們會用海藻纏住身體，或者手拉手聚在一起。牠們極度勤於梳理毛髮以保持保暖氣室。',
+                habitat: '北太平洋沿岸的近岸淺海與巨藻森林中。',
+                diet: '主要食用海膽、鮑魚、蛤蜊、螃蟹等硬殼海洋生物。',
+                funFacts: [
+                    '海獺腋下的皮膚有一個小口袋，專門用來存放牠們最喜歡的「幸運砸殼石頭」與獵物！',
+                    '海獺擁有動物界中最密集的毛髮，每平方公分有多達 10 萬至 15 萬根毛髮。'
+                ],
+                soundPitch: 500
+            },
+            {
+                id: 'snow_leopard',
+                name: '雪豹',
+                englishName: 'Snow Leopard',
+                sciName: 'Panthera uncia',
+                category: 'mammal',
+                categoryName: '哺乳類',
+                status: '易危 (VU)',
+                statusColor: 'bg-amber-500 text-white',
+                image: 'https://images.unsplash.com/photo-1534188753412-3e26d0d618d6?auto=format&fit=crop&w=800&q=80',
+                summary: '神秘的「高山幽靈」，擁有極佳的懸崖偽裝能力與超長的蓬鬆尾巴。',
+                activeTime: '晨昏性 / 夜行性',
+                dietType: '肉食性',
+                social: '獨居',
+                habits: '雪豹性情隱蔽，擅長在陡峭險峻的岩石地形中快速奔跑與跳躍。牠們蓬鬆厚實的長尾巴除了能幫助在懸崖邊保持平衡外，睡覺時還能像圍巾一樣套在臉上保暖。',
+                habitat: '中亞與青藏高原的高海拔陡峭山區（海拔 3000-4500 公尺）。',
+                diet: '主要捕食岩羊、北山羊、盤羊以及小型齧齒類動物。',
+                funFacts: [
+                    '雪豹因喉嚨結構特殊，無法像獅子或老虎那樣發出宏大的吼叫聲，只能發出咕嚕聲或喵喵聲！',
+                    '雪豹一跳可長達 15 公尺，相當於牠們體長的 6 倍。'
+                ],
+                soundPitch: 220
+            },
+            {
+                id: 'owl',
+                name: '雪鴞',
+                englishName: 'Snowy Owl',
+                sciName: 'Bubo scandiacus',
+                category: 'bird',
+                categoryName: '鳥類',
+                status: '易危 (VU)',
+                statusColor: 'bg-amber-500 text-white',
+                image: 'https://images.unsplash.com/photo-1543549790-8b5f4a028cfb?auto=format&fit=crop&w=800&q=80',
+                summary: '北極苔原的羽毛王者，與大多數夜行貓頭鷹不同，牠們適應了極晝日照。',
+                activeTime: '晝夜均可 (適應極晝)',
+                dietType: '肉食性',
+                social: '獨居',
+                habits: '雪鴞具有絕佳的視覺與聽覺，能在雪地下方精準定位獵物動靜。羽毛結構經過特別演化，飛飛行時幾乎完全靜音，能進行出其不意的突襲。',
+                habitat: '環北極地區的無樹苔原、草原與海岸地帶。',
+                diet: '旅鼠是牠們的最愛，一隻成鳥一年可吃掉超過 1600 隻旅鼠；也會捕食野兔及水鳥。',
+                funFacts: [
+                    '雄性雪鴞隨著年齡增長會變得越來越白，老的雄雪鴞幾乎全身純白無瑕！',
+                    '牠們的眼睛是固定的，無法轉動眼球，但頭部可以向左右旋轉達 270 度。'
+                ],
+                soundPitch: 650
+            }
+        ];
+
+        // App State
+        let currentCategory = 'all';
+        let searchQuery = '';
+        let favorites = JSON.parse(localStorage.getItem('wild_wiki_favs') || '[]');
+        let showOnlyFavorites = false;
+        let activeModalAnimal = null;
+
+        // Sound Player simulation using Web Audio API Synthesizer (No external audio asset dependence)
+        function playAnimalSound(pitch) {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(pitch || 300, ctx.currentTime);
+                
+                // Frequency modulation for natural sound
+                osc.frequency.exponentialRampToValueAtTime((pitch || 300) * 0.5, ctx.currentTime + 0.4);
+
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.start();
+                osc.stop(ctx.currentTime + 0.5);
+            } catch (e) {
+                console.log('Audio playback prevented or unsupported');
+            }
+        }
+
+        // DOM Elements Initial Setup
+        document.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            renderAnimals();
+            updateFavBadge();
+        });
+
+        // Dark Mode Logic
+        function initTheme() {
+            if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+
+        function toggleDarkMode() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        // Render Animal Cards
+        function renderAnimals() {
+            const grid = document.getElementById('animalGrid');
+            const emptyState = document.getElementById('emptyState');
+            grid.innerHTML = '';
+
+            const filtered = animalsData.filter(animal => {
+                const matchesCategory = currentCategory === 'all' || animal.category === currentCategory;
+                const matchesSearch = animal.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                     animal.englishName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                     animal.habitat.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                     animal.dietType.toLowerCase().includes(searchQuery.toLowerCase());
+                const matchesFav = !showOnlyFavorites || favorites.includes(animal.id);
+
+                return matchesCategory && matchesSearch && matchesFav;
+            });
+
+            // Handle Empty State
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            // Update Banner Text
+            updateFilterBanner();
+
+            // Populate Cards
+            filtered.forEach(animal => {
+                const isFav = favorites.includes(animal.id);
+                const card = document.createElement('div');
+                card.className = 'group bg-white dark:bg-zinc-800/90 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-zinc-200/80 dark:border-zinc-700/60 transition-all duration-300 flex flex-col cursor-pointer transform hover:-translate-y-1';
+                
+                card.innerHTML = `
+                    <div class="relative h-48 overflow-hidden bg-zinc-100 dark:bg-zinc-700">
+                        <img src="${animal.image}" alt="${animal.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60"></div>
+                        
+                        <span class="absolute top-3 left-3 px-2.5 py-1 rounded-lg text-xs font-semibold bg-black/40 backdrop-blur-md text-white border border-white/20">
+                            ${animal.categoryName}
+                        </span>
+
+                        <button onclick="event.stopPropagation(); toggleFavorite('${animal.id}')" class="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md flex items-center justify-center text-zinc-600 dark:text-zinc-200 hover:text-red-500 dark:hover:text-red-400 transition-all shadow-md">
+                            <i class="${isFav ? 'fa-solid text-red-500' : 'fa-regular'} fa-heart"></i>
+                        </button>
+
+                        <div class="absolute bottom-3 left-3 right-3 flex justify-between items-center text-white">
+                            <div>
+                                <h3 class="text-xl font-bold">${animal.name}</h3>
+                                <p class="text-xs text-zinc-200 italic">${animal.englishName}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-5 flex-grow flex flex-col justify-between space-y-4">
+                        <p class="text-zinc-600 dark:text-zinc-300 text-sm line-clamp-2 leading-relaxed">
+                            ${animal.summary}
+                        </p>
+
+                        <div class="space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-700/50 text-xs text-zinc-500 dark:text-zinc-400">
+                            <div class="flex items-center justify-between">
+                                <span class="flex items-center gap-1.5"><i class="fa-solid fa-tree text-emerald-600"></i>棲息地</span>
+                                <span class="font-medium text-zinc-700 dark:text-zinc-300 truncate max-w-[140px]">${animal.habitat.split('')[0]}...</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="flex items-center gap-1.5"><i class="fa-solid fa-utensils text-amber-600"></i>食性</span>
+                                <span class="font-medium text-zinc-700 dark:text-zinc-300">${animal.dietType}</span>
+                            </div>
+                        </div>
+
+                        <div class="pt-2 flex items-center justify-between">
+                            <span class="text-xs font-semibold px-2 py-0.5 rounded ${animal.statusColor}">${animal.status}</span>
+                            <span class="text-xs text-emerald-600 dark:text-emerald-400 font-bold group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                                了解更多 <i class="fa-solid fa-arrow-right"></i>
+                            </span>
+                        </div>
+                    </div>
+                `;
+
+                card.addEventListener('click', () => openModal(animal));
+                grid.appendChild(card);
+            });
+        }
+
+        function setCategory(category) {
+            currentCategory = category;
+            showOnlyFavorites = false;
+            
+            // Update Tab UI
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                if (btn.dataset.category === category) {
+                    btn.className = 'category-btn active px-4 py-2 rounded-xl font-medium text-sm whitespace-nowrap transition-all bg-emerald-600 text-white shadow-md shadow-emerald-600/20';
+                } else {
+                    btn.className = 'category-btn px-4 py-2 rounded-xl font-medium text-sm whitespace-nowrap transition-all bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700';
+                }
+            });
+
+            renderAnimals();
+        }
+
+        function handleSearch() {
+            const input = document.getElementById('searchInput');
+            const clearBtn = document.getElementById('clearSearchBtn');
+            searchQuery = input.value.trim();
+
+            if (searchQuery.length > 0) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+            }
+
+            renderAnimals();
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('clearSearchBtn').classList.add('hidden');
+            searchQuery = '';
+            renderAnimals();
+        }
+
+        function toggleFavoritesFilter() {
+            showOnlyFavorites = !showOnlyFavorites;
+            const favBtn = document.getElementById('favoriteToggleBtn');
+            
+            if (showOnlyFavorites) {
+                favBtn.classList.add('bg-red-50', 'dark:bg-red-950/30', 'border-red-300', 'text-red-600');
+            } else {
+                favBtn.classList.remove('bg-red-50', 'dark:bg-red-950/30', 'border-red-300', 'text-red-600');
+            }
+
+            renderAnimals();
+        }
+
+        function resetFilters() {
+            currentCategory = 'all';
+            searchQuery = '';
+            showOnlyFavorites = false;
+            document.getElementById('searchInput').value = '';
+            document.getElementById('clearSearchBtn').classList.add('hidden');
+            
+            const favBtn = document.getElementById('favoriteToggleBtn');
+            favBtn.classList.remove('bg-red-50', 'dark:bg-red-950/30', 'border-red-300', 'text-red-600');
+
+            setCategory('all');
+        }
+
+        function updateFilterBanner() {
+            const banner = document.getElementById('filterInfoBanner');
+            const bannerText = document.getElementById('filterInfoText');
+
+            let parts = [];
+            if (showOnlyFavorites) parts.push('我的最愛收藏');
+            if (currentCategory !== 'all') {
+                const catObj = animalsData.find(a => a.category === currentCategory);
+                if (catObj) parts.push(`分類: ${catObj.categoryName}`);
+            }
+            if (searchQuery) parts.push(`搜尋關鍵字: "${searchQuery}"`);
+
+            if (parts.length > 0) {
+                bannerText.textContent = `目前顯示條件：${parts.join(' ｜ ')}`;
+                banner.classList.remove('hidden');
+            } else {
+                banner.classList.add('hidden');
+            }
+        }
+
+        // Favorites Storage Logic
+        function toggleFavorite(id) {
+            if (favorites.includes(id)) {
+                favorites = favorites.filter(favId => favId !== id);
+            } else {
+                favorites.push(id);
+            }
+            localStorage.setItem('wild_wiki_favs', JSON.stringify(favorites));
+            updateFavBadge();
+            renderAnimals();
+
+            if (activeModalAnimal && activeModalAnimal.id === id) {
+                updateModalFavBtnState();
+            }
+        }
+
+        function updateFavBadge() {
+            document.getElementById('favCountBadge').textContent = favorites.length;
+        }
+
+        // Modal Window Actions
+        function openModal(animal) {
+            activeModalAnimal = animal;
+
+            document.getElementById('modalImage').src = animal.image;
+            document.getElementById('modalName').textContent = animal.name;
+            document.getElementById('modalSciName').textContent = `${animal.englishName} (${animal.sciName})`;
+            document.getElementById('modalCategoryTag').textContent = animal.categoryName;
+            
+            const statusTag = document.getElementById('modalStatusTag');
+            statusTag.textContent = animal.status;
+            statusTag.className = `px-2.5 py-0.5 rounded-md text-xs font-semibold ${animal.statusColor}`;
+
+            document.getElementById('modalActiveTime').textContent = animal.activeTime;
+            document.getElementById('modalDietType').textContent = animal.dietType;
+            document.getElementById('modalSocial').textContent = animal.social;
+
+            document.getElementById('modalHabits').textContent = animal.habits;
+            document.getElementById('modalHabitat').textContent = animal.habitat;
+            document.getElementById('modalDiet').textContent = animal.diet;
+
+            // Render Fun Facts
+            const factsList = document.getElementById('modalFunFacts');
+            factsList.innerHTML = '';
+            animal.funFacts.forEach(fact => {
+                const li = document.createElement('li');
+                li.textContent = fact;
+                factsList.appendChild(li);
+            });
+
+            updateModalFavBtnState();
+
+            // Show Modal
+            const modal = document.getElementById('detailModal');
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('detailModal');
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+            activeModalAnimal = null;
+        }
+
+        function toggleModalFavorite() {
+            if (activeModalAnimal) {
+                toggleFavorite(activeModalAnimal.id);
+            }
+        }
+
+        function updateModalFavBtnState() {
+            if (!activeModalAnimal) return;
+            const favBtn = document.getElementById('modalFavBtn');
+            const isFav = favorites.includes(activeModalAnimal.id);
+            if (isFav) {
+                favBtn.innerHTML = '<i class="fa-solid fa-heart text-red-500"></i>';
+            } else {
+                favBtn.innerHTML = '<i class="fa-regular fa-heart"></i>';
+            }
+        }
+
+        function playCurrentAnimalSound() {
+            if (activeModalAnimal) {
+                playAnimalSound(activeModalAnimal.soundPitch);
+                
+                // Visual feedback on audio button
+                const btnText = document.getElementById('modalAudioText');
+                const origText = btnText.textContent;
+                btnText.textContent = '發聲中...';
+                setTimeout(() => {
+                    btnText.textContent = origText;
+                }, 600);
+            }
+        }
+
+        // Close modal when clicking dark backdrop
+        document.getElementById('detailModal').addEventListener('click', (e) => {
+            if (e.target.id === 'detailModal') {
+                closeModal();
+            }
+        });
+
+        // Keyboard accessibility (ESC to close)
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !document.getElementById('detailModal').classList.contains('hidden')) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
